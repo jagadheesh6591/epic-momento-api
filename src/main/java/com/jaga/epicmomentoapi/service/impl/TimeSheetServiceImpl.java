@@ -8,12 +8,11 @@ import com.jaga.epicmomentoapi.service.TimesheetService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.sql.Time;
 import java.time.LocalDate;
 import java.time.LocalTime;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Service
@@ -52,21 +51,22 @@ public class TimeSheetServiceImpl implements TimesheetService {
 
         timeSheetsMap.entrySet().forEach(entrySetTimesheet -> {
             List<Timesheet> resultTimesheet = new ArrayList<>();
+            Employee employee = entrySetTimesheet.getValue().get(0).getEmployee();
+            Map<LocalDate, Timesheet> timeSheetGroupByDate = entrySetTimesheet.getValue().stream().collect(Collectors.toMap(Timesheet::getDate, Function.identity()));
             allDates.forEach(date -> {
-                entrySetTimesheet.getValue().forEach(timesheet -> {
-                    if(timesheet.getDate().equals(date)) {
-                        resultTimesheet.add(timesheet);
-                    } else {
-                        resultTimesheet.add(new Timesheet(date,null,null,timesheet.getEmployee()));
-                    }
-                });
+
+                if(timeSheetGroupByDate.containsKey(date)) {
+                    resultTimesheet.add(timeSheetGroupByDate.get(date));
+                }  else {
+                    resultTimesheet.add(new Timesheet(date, null, null, employee));
+                }
             });
 
             resultMap.put(entrySetTimesheet.getKey(), resultTimesheet);
 
         });
 
-        return timeSheetsMap;
+        return resultMap;
     }
 
     public  List<Timesheet> retrieveTimesheets(LocalDate fromDate, LocalDate toDate) {
